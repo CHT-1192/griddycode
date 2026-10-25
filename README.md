@@ -10,6 +10,7 @@ P.S. Press `CTRL` + `I` for a quick introduction in the Editor :)
 # Table of Contents
    - [Requirements](#requirements)
    - [Syntax highlighting](#-syntax-highlighting)
+   - [Roadmap](#%EF%B8%8F-roadmap)
    - [Lua modding](#%EF%B8%8F-lua-modding)
 	  - [Where?](#where)
 	  - [How?](#how)
@@ -43,6 +44,9 @@ The engine is plain GDScript. See [Docs/HIGHLIGHTING.md](Docs/HIGHLIGHTING.md) f
 ```sh
 godot --headless --path . --script res://Tests/highlight/run_tests.gd
 ```
+
+# 🗺️ Roadmap
+The long-term goal is a **Neovim with effects**: real editing capability — project search, multiple buffers, an LSP client, configurable keymaps — on top of the world-space UI where the camera is the transition. The concrete milestones and non-goals live in [Docs/ROADMAP.md](Docs/ROADMAP.md).
 
 # ⌨️ Lua modding
 GriddyCode allows you to extend its functionality via **Lua**.
