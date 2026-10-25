@@ -46,25 +46,32 @@ func _ready():
 		# EWW GROSS
 		# why are we still using CRLF?
 		path[0] = path[0].replace("\r", "")
-	path = path[0].replace("\n", "")
+	var cwd = get_shell_cwd(path[0].replace("\n", ""))
 
-	if args.size() > 0:
-		if args[0] != ".":
-			current_file = path + "/" + args[0]
-		current_dir = path
+	var cli_path = get_cli_path(args)
+	var is_cli = cli_path != ""
 
-	var is_cli = args.size() > 0
-	print("INFO: Running inside CLI mode: ", is_cli)
+	if is_cli:
+		current_dir = cwd
+
+		if cli_path != ".":
+			current_file = resolve_path(cli_path, cwd)
+			current_dir = current_file.get_base_dir()
+
+	print("INFO: Running inside CLI mode: ", is_cli, " (file: \"", current_file, "\")")
 
 	inject_lua()
 	check_for_reserved()
 
 	load_game(is_cli)
-	open_file(current_file)
+
+	if current_file:
+		open_file(current_file)
 
 	LuaSingleton.themes = list_themes()
 
-	LuaSingleton.setup_extension(current_file.split(".")[-1])
+	if current_file:
+		LuaSingleton.setup_extension(current_file.get_extension())
 	LuaSingleton.setup_theme(LuaSingleton.theme)
 
 	file_dialog.setup()
@@ -73,6 +80,65 @@ func _ready():
 		LuaSingleton.setup_discord_sdk("Idle", "")
 		Code.toggle(%FileDialog)
 		warn("Welcome to [color=#c9daf8]Bussin[/color] [color=#85c6ff]GriddyCode[/color]! Please select a file, then press CTRL + I to get started! :D")
+
+# Engine flags that take a value. Their values must not be mistaken for a file
+# to open (i.e. `godot --path . --scene res://Scenes/editor.tscn`).
+const ENGINE_FLAGS_WITH_VALUE = [
+	"--path", "--scene", "--main-pack", "--script",
+	"--rendering-method", "--rendering-driver", "--display-driver",
+	"--audio-driver", "--gpu-index", "--resolution", "--position",
+	"--screen", "--log-file", "--write-movie", "--fixed-fps",
+	"--time-scale", "--editor-pid", "--remote-fs", "--debug-server",
+	"--lsp-port", "--dap-port", "--benchmark-file", "--gpu-profile",
+	"--export-release", "--export-debug", "--export-pack",
+]
+
+# Returns the file the editor was asked to open, or "" if there is none.
+# Arguments after `--` always win, so `griddycode -- --weird-name.ts` works too.
+func get_cli_path(args: PackedStringArray) -> String:
+	var user_args = OS.get_cmdline_user_args()
+	if user_args.size() > 0:
+		return user_args[0]
+
+	var skip_value = false
+
+	for arg in args:
+		if skip_value:
+			skip_value = false
+			continue
+
+		if arg.begins_with("-"):
+			skip_value = arg in ENGINE_FLAGS_WITH_VALUE
+			continue
+
+		# Godot's own resources (i.e. the value of `--scene`) are not files to edit.
+		if arg.begins_with("res://") or arg.begins_with("user://"):
+			continue
+
+		return arg
+
+	return ""
+
+# Godot changes the process working directory to the project when `--path` is
+# used, so relative paths have to be resolved against the shell's directory.
+func get_shell_cwd(process_cwd: String) -> String:
+	var shell_cwd = OS.get_environment("PWD")
+
+	if shell_cwd != "" and shell_cwd.is_absolute_path() and DirAccess.dir_exists_absolute(shell_cwd):
+		return shell_cwd
+
+	return process_cwd
+
+func resolve_path(given_path: String, cwd: String) -> String:
+	var resolved = given_path.strip_edges()
+
+	if resolved.begins_with("~"):
+		resolved = OS.get_environment("HOME") + resolved.substr(1)
+
+	if resolved.is_relative_path():
+		resolved = cwd.path_join(resolved)
+
+	return resolved.simplify_path()
 
 func check_for_reserved() -> void:
 	var folders = ["langs", "themes"]
