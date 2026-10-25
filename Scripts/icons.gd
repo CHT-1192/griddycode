@@ -178,8 +178,15 @@ const ICONS = [
 	}
 ]
 
+var _icon_cache: Dictionary = {}
+
 func get_icon_data(extension: String) -> Dictionary:
+	if _icon_cache.has(extension):
+		return _icon_cache[extension]
 	for icon in ICONS:
 		if extension in icon["extensions"]:
+			_icon_cache[extension] = icon
 			return icon
-	return { "extensions": ["*"], "icon": "󰈔", "color": "#ffffff" }
+	var fallback := { "extensions": ["*"], "icon": "󰈔", "color": "#ffffff" }
+	_icon_cache[extension] = fallback
+	return fallback

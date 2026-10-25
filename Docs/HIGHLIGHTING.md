@@ -97,6 +97,10 @@ they also color the punctuation inside strings and comments.
 - **Anchors.** `\G` only matches at TextMate's anchor position and `\A` only on
   the first line, matching VS Code semantics.
 - **Long lines.** Lines over 20 000 characters are not tokenized.
+- **Large files.** Files over 8 MB are refused, and files over 5 000 lines or
+  1 MB open with the cheap fallback highlighter instead of a grammar: the
+  editor asks for every line on the first paint, and tokenizing an 80 000 line
+  file takes ~20 s.
 - **Big states.** More than 400 alternatives for one state switches to the
   sequential scanner (slower but correct).
 

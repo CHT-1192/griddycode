@@ -6,6 +6,14 @@ extends Node2D
 @onready var canvas_layer: CanvasLayer = $CanvasLayer
 const NOTICE = preload("res://Scenes/notice.tscn")
 
+## Files above this are refused: a huge buffer freezes the editor long before
+## syntax highlighting is involved.
+const MAX_FILE_BYTES := 8 * 1024 * 1024
+## Above these limits the TextMate grammar is skipped and the cheap keyword
+## fallback is used instead; tokenizing an 80k line file takes ~20 seconds.
+const MAX_HIGHLIGHT_LINES := 5000
+const MAX_HIGHLIGHT_CHARS := 1000000
+
 var current_file: String;
 var current_dir: String = "/";
 
@@ -187,6 +195,17 @@ func warn(notice: String) -> void:
 	)
 
 func open_file(path: String) -> void:
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		warn("[color=yellow]WARNING[/color]: Could not open that file.")
+		return
+	var size := file.get_length()
+	file = null
+
+	if size > MAX_FILE_BYTES:
+		warn("[color=yellow]WARNING[/color]: %s is %.1f MB — too large to open." % [path.get_file(), size / 1048576.0])
+		return
+
 	LuaSingleton.setup_discord_sdk("Editing " + path.split("/")[-1], "In " + current_dir.split("/")[-1])
 
 	var src = Fs._load(path)
@@ -195,6 +214,9 @@ func open_file(path: String) -> void:
 	Code.text = src
 
 	apply_language(path)
+
+	if src.length() > MAX_HIGHLIGHT_CHARS or src.count("\n") + 1 > MAX_HIGHLIGHT_LINES:
+		warn("[color=yellow]WARNING[/color]: Large file — syntax highlighting is simplified.")
 
 func apply_language(path: String) -> void:
 	var extension := path.get_extension()

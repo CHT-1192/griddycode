@@ -11,6 +11,10 @@ var dirs: Array[String]
 var bbcode_dirs: Array[String]
 var shortened_dirs: Array[String]
 var files: Array[String]
+## Name lookups for the current directory, so drawing a row never touches the
+## filesystem again.
+var dir_set: Dictionary = {}
+var file_set: Dictionary = {}
 
 var query: String = ""
 var search_limit: int = 1000
@@ -31,9 +35,23 @@ func change_dir(path) -> void:
 	#dir.include_hidden = true
 	# WARNING: this will heavily affect performance if de-commented
 
-	dirs = [".."];
-	dirs.append_array(dir.get_directories())
-	dirs.append_array(dir.get_files())
+	# Enumerate the directory once: DirAccess.get_directories() re-reads the
+	# folder on every call, which made drawing a large directory quadratic.
+	var directories := dir.get_directories()
+	var file_names := dir.get_files()
+
+	dirs = [".."]
+	dir_set.clear()
+	for entry in directories:
+		dirs.append(entry)
+		dir_set[entry] = true
+
+	file_set.clear()
+	files.clear()
+	for entry in file_names:
+		dirs.append(entry)
+		file_set[entry] = true
+		files.append(entry)
 
 	shortened_dirs = []
 	for dir_ in dirs:
@@ -45,8 +63,6 @@ func change_dir(path) -> void:
 	bbcode_dirs.append_array(dirs)
 
 	current_dirs_count = len(dirs)
-
-	files.append_array(dir.get_files())
 
 	zoom = %Cam.to_zoom(code.get_longest_line(dirs).length())
 
@@ -116,12 +132,12 @@ func show_items() -> void:
 func show_item(index: int) -> void:
 	var item = dirs[index]
 	var bbcode_item = bbcode_dirs[index]
-	if is_selected(item):
+	if index == selected_index:
 		push_bgcolor(LuaSingleton.gui.selection_color)
 	else:
 		push_bgcolor(Color(0, 0, 0, 0))  # Reset background color if not selected
 
-	var is_dir = dir.get_directories().find(item) != -1
+	var is_dir = dir_set.has(item)
 
 	if item == "..":
 		push_color(LuaSingleton.gui.font_color)
@@ -152,22 +168,13 @@ func show_item(index: int) -> void:
 
 	if active: %Cam.focus_on(Vector2(gp().x, global_position.y + (selected_index * 23)), zoom)
 
-# i gave up at that point, sorry for what you're about to witness
-func is_selected(item: String) -> bool:
-	var dir_item = dirs.find(item);
-
-	var is_dir_item = dir_item != -1;
-	var is_dir_current = dir_item == selected_index;
-
-	return (is_dir_item and is_dir_current)
-
 func handle_enter_key() -> void:
 	if selected_index > len(dirs): return
 	# ^^ this happens when the cursor was at, i.e., pos. 6, but arr is only has 4 entries
 
 	var item = dirs[selected_index];
 
-	var is_file = files.find(item) != -1;
+	var is_file = file_set.has(item);
 
 	if is_file:
 		editor.current_dir = dir.get_current_dir();
