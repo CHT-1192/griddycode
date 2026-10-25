@@ -235,6 +235,48 @@ var settings: Array = [
 		"icon": "󰙯",
 		"value": true,
 	},
+	# CAMERA
+	{
+		"property": "camera_motion",
+		"display": "Camera: Motion",
+		"options": [],
+		"icon": "󰍍",
+		"value": true,
+	},
+	{
+		"property": "camera_follow",
+		"display": "Camera: Follow Speed",
+		"options": [],
+		"icon": "󱕒",
+		"value": 0.7,
+		"min": 0.0, "max": 1.0,
+		"precision": true, "step": 0.01,
+	},
+	{
+		"property": "camera_sway",
+		"display": "Camera: Sway",
+		"options": [],
+		"icon": "󱃖",
+		"value": 4,
+		"min": 0, "max": 10,
+		"precision": true, "step": 0.1,
+	},
+	{
+		"property": "camera_sway_speed",
+		"display": "Camera: Sway Speed",
+		"options": [],
+		"icon": "󰁨",
+		"value": 2,
+		"min": 0, "max": 5,
+		"precision": true, "step": 0.1,
+	},
+	{
+		"property": "camera_music",
+		"display": "Camera: Music Pulse",
+		"options": [],
+		"icon": "󰝚",
+		"value": true,
+	},
 ];
 
 var keywords: Dictionary = {
@@ -362,6 +404,26 @@ func handle_internal_setting_change(property: String, value: Variant) -> void:
 		Music.music_move_intensity = value
 	if p == "discord_sdk":
 		discord_sdk = value;
+	# CAMERA
+	if p.begins_with("camera_"):
+		apply_camera_setting(p, value)
+
+func apply_camera_setting(property: String, value: Variant) -> void:
+	var camera := get_node_or_null("/root/Editor/Misc/Cam") as Camera
+	if camera == null:
+		return
+
+	match property:
+		"camera_motion":
+			camera.motion_enabled = value
+		"camera_follow":
+			camera.follow_amount = value
+		"camera_sway":
+			camera.sway_radius = value
+		"camera_sway_speed":
+			camera.sway_speed = value
+		"camera_music":
+			camera.music_pulse_enabled = value
 
 func setup_discord_sdk(detail: String, state: String) -> void:
 	if !discord_sdk: return

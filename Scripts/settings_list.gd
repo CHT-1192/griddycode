@@ -20,14 +20,15 @@ func setup_settings() -> void:
 		var _min = setting.min if setting.has("min") else 0;
 		var _max = setting.max if setting.has("max") else 0;
 		var precision = setting.precision if setting.has("precision") else false;
+		var step = setting.step if setting.has("step") else 0.0;
 
-		create_setting(setting.display, setting.icon, setting.value, setting.options, setting.property, unit, _min, _max, precision)
+		create_setting(setting.display, setting.icon, setting.value, setting.options, setting.property, unit, _min, _max, precision, step)
 
 	var child = UPDATE.instantiate()
 
 	add_child(child)
 
-func create_setting(text: String, icon: String, value: Variant, options: Array, property: String, unit: String, _min: float, _max: float, precision: bool) -> void:
+func create_setting(text: String, icon: String, value: Variant, options: Array, property: String, unit: String, _min: float, _max: float, precision: bool, step: float = 0.0) -> void:
 	var node = SETTING.instantiate()
 
 	add_child(node)
@@ -52,6 +53,8 @@ func create_setting(text: String, icon: String, value: Variant, options: Array, 
 
 	if !precision:
 		slider.step = 1
+	elif step > 0.0:
+		slider.step = step
 
 	slider.max_value = _max
 	slider.min_value = _min
