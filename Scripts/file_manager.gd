@@ -11,7 +11,7 @@ const NOTICE = preload("res://Scenes/notice.tscn")
 const MAX_FILE_BYTES := 8 * 1024 * 1024
 ## Above these limits the TextMate grammar is skipped and the cheap keyword
 ## fallback is used instead; tokenizing an 80k line file takes ~20 seconds.
-const MAX_HIGHLIGHT_LINES := 5000
+const MAX_HIGHLIGHT_LINES := 10000
 const MAX_HIGHLIGHT_CHARS := 1000000
 
 var current_file: String;
@@ -214,9 +214,20 @@ func open_file(path: String) -> void:
 	Code.text = src
 
 	apply_language(path)
+	call_deferred("fit_external_background")
 
 	if src.length() > MAX_HIGHLIGHT_CHARS or src.count("\n") + 1 > MAX_HIGHLIGHT_LINES:
 		warn("[color=yellow]WARNING[/color]: Large file — syntax highlighting is simplified.")
+
+## The background quad is a fixed size in the scene; long documents scroll
+## past it and would expose the clear color.
+func fit_external_background() -> void:
+	var background: ColorRect = %ExternalBackground
+	var line_height: int = Code.get_line_height()
+	var needed: float = maxf(Code.get_line_count() * line_height + 4000.0, 60000.0)
+	background.position = Vector2(background.position.x, -1000.0)
+	background.size = Vector2(background.size.x, needed + 1000.0)
+
 
 func apply_language(path: String) -> void:
 	var extension := path.get_extension()

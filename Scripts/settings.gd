@@ -33,6 +33,9 @@ func setup_theme() -> void:
 
 	%Background.color = LuaSingleton.gui.background_color;
 	%ExternalBackground.color = LuaSingleton.gui.background_color;
+	# Anything outside the world background quad (very long documents scroll
+	# past its bottom edge) falls through to the viewport clear color.
+	RenderingServer.set_default_clear_color(LuaSingleton.gui.background_color)
 
 	code.add_theme_color_override("background_color", LuaSingleton.gui.background_color)
 	code.add_theme_color_override("current_line_color", LuaSingleton.gui.current_line_color)
