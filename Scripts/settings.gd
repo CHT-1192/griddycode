@@ -106,7 +106,9 @@ func toggle(node: Object, apply_background: bool = true, factor: float = (18 * 7
 
 	tween_fade(node, opacity)
 
-	var future_pos = slide_from_left(node, opacity, factor)
+	# The settings page is framed by the camera (it flies to the selected line),
+	# so it must not slide as well or the target would be stale.
+	var future_pos: Vector2 = node.global_position if node == %Settings else slide_from_left(node, opacity, factor)
 
 	if node is FileDialogType:
 		node.active = !_show;
@@ -127,14 +129,15 @@ func toggle(node: Object, apply_background: bool = true, factor: float = (18 * 7
 		if node.name == "Info":
 			future_pos.x += 700
 			future_pos.y += 500
-		if node.name == "Settings":
-			future_pos.x += 200
-			future_pos.y += 300
 		if node.name == "Comments":
 			future_pos.x += 200
 			future_pos.y += 300
 
-		%Cam.focus_on(future_pos, node.zoom if ("zoom" in node) else Vector2(1,1))
+		if node == %Settings:
+			# The settings list owns its own framing: selected line + zoom.
+			%SettingsList.select(%SettingsList.selected_index)
+		else:
+			%Cam.focus_on(future_pos, node.zoom if ("zoom" in node) else Vector2(1,1))
 		code.release_focus()
 
 	_show = !_show;
