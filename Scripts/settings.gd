@@ -55,7 +55,7 @@ func setup_highlighter() -> void:
 	if editor != null and editor.current_file != null:
 		extension = editor.current_file.get_extension()
 
-	var theme := TMTheme.from_categories(LuaSingleton.keywords, LuaSingleton.gui.font_color)
+	var tm_theme := TMTheme.from_categories(LuaSingleton.keywords, LuaSingleton.gui.font_color)
 	highlighter.configure_fallback(
 		LuaSingleton.keywords,
 		LuaSingleton.keywords_to_highlight,
@@ -63,7 +63,7 @@ func setup_highlighter() -> void:
 		LuaSingleton.gui.font_color
 	)
 	highlighter.set_grammar(TextMate.grammar_for_extension(extension))
-	highlighter.set_theme(theme)
+	highlighter.set_theme(tm_theme)
 
 # CodeEdit functionality
 func _on_code_completion_requested() -> void:

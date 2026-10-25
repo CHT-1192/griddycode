@@ -25,7 +25,6 @@ func _ready():
 		current_dir = "C:/"
 
 	var args = OS.get_cmdline_args()
-	var is_debug = OS.is_debug_build()
 	var path = []
 
 	# in order to be compatible with the gayming OS...

@@ -271,6 +271,8 @@ const VHS_AND_CRT = preload("res://Shaders/vhs_and_crt.gdshader")
 
 signal done_parsing;
 signal on_theme_load;
+# Emitted from file_manager.gd, so the declaring class itself never uses it.
+@warning_ignore("unused_signal")
 signal on_settings_change;
 
 
