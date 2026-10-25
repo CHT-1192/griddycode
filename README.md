@@ -9,6 +9,7 @@ P.S. Press `CTRL` + `I` for a quick introduction in the Editor :)
 
 # Table of Contents
    - [Requirements](#requirements)
+   - [Syntax highlighting](#-syntax-highlighting)
    - [Lua modding](#%EF%B8%8F-lua-modding)
 	  - [Where?](#where)
 	  - [How?](#how)
@@ -31,6 +32,17 @@ P.S. Press `CTRL` + `I` for a quick introduction in the Editor :)
 | -------- | -------- |
 | [Nerdfont](https://www.nerdfonts.com/) - we use Nerdfont for the file picker. | You'll know it's missing when your icons look like "□" |
 | [Linux](https://en.wikipedia.org/wiki/List_of_Linux_distributions) - GriddyCode is tested **mainly** on Linux | No, macOS won't be supported. Gaming OS works. |
+
+# 🎨 Syntax highlighting
+Highlighting is driven by **TextMate grammars** — the same `.tmLanguage` files VS Code uses — so strings, comments, f-strings and embedded `<style>`/`<script>` blocks all follow real grammar rules instead of a flat keyword list.
+
+Shipped languages: Python, JavaScript, TypeScript, JSON, Lua, Go, C, C++, Rust, CSS, HTML, Markdown, Shell and YAML (`Grammars/manifest.json`). Everything else keeps using the Lua plugins as a fallback.
+
+The engine is plain GDScript. See [Docs/HIGHLIGHTING.md](Docs/HIGHLIGHTING.md) for the architecture, the limitations (highlighting is color-only in Godot) and how to add a language:
+
+```sh
+godot --headless --path . --script res://Tests/highlight/run_tests.gd
+```
 
 # ⌨️ Lua modding
 GriddyCode allows you to extend its functionality via **Lua**.

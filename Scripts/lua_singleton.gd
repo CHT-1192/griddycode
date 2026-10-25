@@ -430,7 +430,10 @@ func setup_extension(extension):
 
 	var err: LuaError = lua.do_file("user://langs/" + extension + ".lua")
 	if err is LuaError:
-		editor.warn("[color=yellow]WARNING[/color]: This file isn’t supported. Highlighting, autocomplete, comments and other features won’t work properly.")
+		if TextMate.has_grammar(extension):
+			editor.warn("[color=yellow]WARNING[/color]: Autocomplete and comments aren’t available for this file type.")
+		else:
+			editor.warn("[color=yellow]WARNING[/color]: This file isn’t supported. Highlighting, autocomplete, comments and other features won’t work properly.")
 		print("ERROR %d: %s" % [err.type, err.message])
 		return
 

@@ -70,8 +70,6 @@ func _ready():
 
 	LuaSingleton.themes = list_themes()
 
-	if current_file:
-		LuaSingleton.setup_extension(current_file.get_extension())
 	LuaSingleton.setup_theme(LuaSingleton.theme)
 
 	file_dialog.setup()
@@ -194,9 +192,15 @@ func open_file(path: String) -> void:
 
 	var src = Fs._load(path)
 
+	current_file = path
 	Code.text = src
 
-	current_file = path;
+	apply_language(path)
+
+func apply_language(path: String) -> void:
+	var extension := path.get_extension()
+	LuaSingleton.setup_extension(extension)
+	Code.setup_highlighter()
 
 func list_themes() -> Array:
 	var themes_folder = DirAccess.open("user://themes");

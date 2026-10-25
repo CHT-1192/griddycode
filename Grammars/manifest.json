@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "grammars": [
+    { "scope": "source.python", "name": "Python", "path": "res://Grammars/python.tmLanguage", "extensions": ["py", "pyw"] },
+    { "scope": "source.js", "name": "JavaScript", "path": "res://Grammars/javascript.tmLanguage", "extensions": ["js", "mjs", "cjs", "jsx"] },
+    { "scope": "source.ts", "name": "TypeScript", "path": "res://Grammars/typescript.tmLanguage", "extensions": ["ts", "mts", "cts"] },
+    { "scope": "source.json", "name": "JSON", "path": "res://Grammars/json.tmLanguage", "extensions": ["json", "webmanifest"] },
+    { "scope": "source.lua", "name": "Lua", "path": "res://Grammars/lua.tmLanguage", "extensions": ["lua"] },
+    { "scope": "source.go", "name": "Go", "path": "res://Grammars/go.tmLanguage", "extensions": ["go"] },
+    { "scope": "source.c", "name": "C", "path": "res://Grammars/c.tmLanguage", "extensions": ["c", "h"] },
+    { "scope": "source.cpp", "name": "C++", "path": "res://Grammars/cpp.tmLanguage", "extensions": ["cpp", "cxx", "cc", "hpp", "hxx", "hh"] },
+    { "scope": "source.rust", "name": "Rust", "path": "res://Grammars/rust.tmLanguage", "extensions": ["rs"] },
+    { "scope": "source.css", "name": "CSS", "path": "res://Grammars/css.tmLanguage", "extensions": ["css"] },
+    { "scope": "text.html.basic", "name": "HTML", "path": "res://Grammars/html.tmLanguage", "extensions": ["html", "htm"] },
+    { "scope": "text.html.markdown", "name": "Markdown", "path": "res://Grammars/markdown.tmLanguage", "extensions": ["md", "markdown"] },
+    { "scope": "source.shell", "name": "Shell", "path": "res://Grammars/shell.tmLanguage", "extensions": ["sh", "bash", "zsh"] },
+    { "scope": "source.yaml", "name": "YAML", "path": "res://Grammars/yaml.tmLanguage", "extensions": ["yaml", "yml"] },
+
+    { "scope": "source.regexp.python", "name": "Python RegExp", "path": "res://Grammars/python-regexp.tmLanguage", "extensions": [] },
+    { "scope": "source.cpp.embedded.macro", "name": "C++ Macro", "path": "res://Grammars/cpp-macro.tmLanguage", "extensions": [] },
+    { "scope": "source.yaml.1.2", "name": "YAML 1.2", "path": "res://Grammars/yaml-1.2.tmLanguage", "extensions": [] },
+    { "scope": "source.yaml.embedded", "name": "YAML Embedded", "path": "res://Grammars/yaml-embedded.tmLanguage", "extensions": [] }
+  ]
+}

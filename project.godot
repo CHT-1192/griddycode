@@ -30,6 +30,7 @@ Fs="*res://Scripts/fs.gd"
 Music="*res://Scripts/music.gd"
 CommentsData="*res://Scripts/comments_data.gd"
 DiscordSDKLoader="*res://addons/discord-sdk-gd/nodes/discord_autoload.gd"
+TextMate="*res://Scripts/highlighting/tm_singleton.gd"
 
 [display]
 

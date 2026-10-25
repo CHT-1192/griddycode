@@ -12,6 +12,8 @@ const FUNCTION = preload("res://Icons/function.png")
 
 var file_modified = false;
 
+var highlighter: TMHighlighter;
+
 var _show = false;
 var active_overlay: Variant;
 var node_is_transitioning: bool;
@@ -45,28 +47,23 @@ func setup_theme() -> void:
 		label.add_theme_color_override("default_color", LuaSingleton.gui.font_color)
 
 func setup_highlighter() -> void:
-	var CH: CodeHighlighter = CodeHighlighter.new();
+	if highlighter == null:
+		highlighter = TMHighlighter.new()
+		syntax_highlighter = highlighter
 
-	syntax_highlighter = CH;
+	var extension := ""
+	if editor != null and editor.current_file != null:
+		extension = editor.current_file.get_extension()
 
-	CH.number_color = LuaSingleton.keywords.binary;
-	CH.symbol_color = LuaSingleton.keywords.symbol;
-	CH.function_color = LuaSingleton.keywords.function;
-	CH.member_variable_color = LuaSingleton.keywords.member;
-
-	# i dont remember why this was here, but the code works without it now
-	#await LuaSingleton.done_parsing;
-
-	var kth = LuaSingleton.keywords_to_highlight;
-	var crth = LuaSingleton.color_regions_to_highlight;
-
-	for key in kth:
-		CH.add_keyword_color(key, LuaSingleton.keywords[kth[key]])
-
-	for entry in crth:
-		if CH.has_color_region(entry[0]): continue
-
-		CH.add_color_region(entry[0], entry[1], LuaSingleton.keywords[entry[2]], entry[3])
+	var theme := TMTheme.from_categories(LuaSingleton.keywords, LuaSingleton.gui.font_color)
+	highlighter.configure_fallback(
+		LuaSingleton.keywords,
+		LuaSingleton.keywords_to_highlight,
+		LuaSingleton.color_regions_to_highlight,
+		LuaSingleton.gui.font_color
+	)
+	highlighter.set_grammar(TextMate.grammar_for_extension(extension))
+	highlighter.set_theme(theme)
 
 # CodeEdit functionality
 func _on_code_completion_requested() -> void:
