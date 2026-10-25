@@ -19,6 +19,18 @@ var _valid := 0
 var _line_count := -1
 var _connected := false
 
+## Long files are tokenized in the background: on the first paint Godot asks
+## for every line of the control, and a C++ file costs a few milliseconds per
+## line.  Small jumps stay synchronous so editing feels instant.
+const SYNC_LINES := 120
+const WARM_BUDGET_MS := 16
+const WARM_REFRESH_EVERY := 400
+
+var _warm_scheduled := false
+var _last_refresh_valid := 0
+var _frame := -1
+var _frame_ms := 0
+
 
 func set_grammar(grammar: TMGrammar) -> void:
 	if _grammar == grammar:
@@ -60,6 +72,7 @@ func invalidate_from(line: int) -> void:
 func _clear_highlighting_cache() -> void:
 	_valid = 0
 	_line_count = -1
+	_last_refresh_valid = 0
 	_states.clear()
 	_tokens.clear()
 	_hashes = PackedInt64Array()
@@ -91,7 +104,26 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 	if line < _valid and line < _hashes.size() and _hashes[line] == text.hash():
 		return _unpack(_tokens[line])
 
+	# The first paint asks for every line of the document, which is far too
+	# much work for one frame; once the per-frame budget is spent the rest of
+	# the file is filled in by the deferred warmup pass.
+	var frame := Engine.get_process_frames()
+	if frame != _frame:
+		_frame = frame
+		_frame_ms = 0
+
+	if _warm_scheduled or line - _valid > SYNC_LINES:
+		_schedule_warmup()
+		return {}
+
+	if _frame_ms > WARM_BUDGET_MS:
+		_schedule_warmup()
+		return {}
+
+	var started := Time.get_ticks_msec()
 	_ensure_line(text_edit, line)
+	_frame_ms += Time.get_ticks_msec() - started
+
 	if line < _tokens.size():
 		return _unpack(_tokens[line])
 	return {}
@@ -116,6 +148,51 @@ func _on_lines_edited(from_line: int, to_line: int) -> void:
 	invalidate_from(mini(from_line, to_line))
 
 
+func _schedule_warmup() -> void:
+	if _warm_scheduled or _grammar == null:
+		return
+	_warm_scheduled = true
+	_last_refresh_valid = _valid
+	_warm_loop()
+
+
+## Fills the rest of the document a few milliseconds at a time.  The loop is
+## async on purpose: `call_deferred` chains are flushed inside a single frame,
+## which would reintroduce the freeze this is meant to avoid.
+func _warm_loop() -> void:
+	while true:
+		var text_edit := get_text_edit()
+		if text_edit == null or _grammar == null:
+			break
+
+		var line_count := text_edit.get_line_count()
+		if _valid >= line_count:
+			break
+
+		var state: TMState = _states[_valid - 1].clone() if _valid > 0 and _valid <= _states.size() else TMState.new()
+		var started := Time.get_ticks_msec()
+
+		while _valid < line_count:
+			var text := _line_text(text_edit, _valid)
+			_tokenizer.tokenize(text + "\n", state, _valid == 0)
+			_states.append(state.clone())
+			_tokens.append(_trim_trailing_newline(_tokenizer.tokens(), text.length()))
+			_hashes.append(text.hash())
+			_valid += 1
+
+			if Time.get_ticks_msec() - started > WARM_BUDGET_MS:
+				break
+
+		if _valid - _last_refresh_valid >= WARM_REFRESH_EVERY:
+			_last_refresh_valid = _valid
+			emit_changed()
+
+		await text_edit.get_tree().process_frame
+
+	_warm_scheduled = false
+	emit_changed()
+
+
 func _ensure_line(text_edit: TextEdit, line: int) -> void:
 	var base := mini(_valid, line)
 	if base < _valid:
@@ -131,9 +208,12 @@ func _ensure_line(text_edit: TextEdit, line: int) -> void:
 	var index := _valid
 	while index <= line:
 		var text := _line_text(text_edit, index)
-		_tokenizer.tokenize(text, state, index == 0)
+		# TextMate tokenizes a line together with its trailing newline; several
+		# grammars end their line rules with `\n` or `(?=\n)` and would leave a
+		# frame open forever without it.
+		_tokenizer.tokenize(text + "\n", state, index == 0)
 		_states.append(state.clone())
-		_tokens.append(_tokenizer.tokens())
+		_tokens.append(_trim_trailing_newline(_tokenizer.tokens(), text.length()))
 		_hashes.append(text.hash())
 		index += 1
 
@@ -147,6 +227,20 @@ func _truncate_to(count: int) -> void:
 		_tokens.resize(count)
 	if _hashes.size() > count:
 		_hashes.resize(count)
+
+
+## Tokens for the virtual newline are dropped: Godot columns stop at the end
+## of the line.
+func _trim_trailing_newline(packed: PackedInt32Array, line_length: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	var index := 0
+	while index + 1 < packed.size():
+		if packed[index] >= line_length:
+			break
+		out.append(packed[index])
+		out.append(packed[index + 1])
+		index += 2
+	return out
 
 
 func _line_text(text_edit: TextEdit, line: int) -> String:

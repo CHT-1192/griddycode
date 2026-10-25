@@ -22,6 +22,17 @@ const MINI_GRAMMAR := r"""
 }
 """
 
+## Line comment rules that end on the newline, like the C++ grammar.
+const NEWLINE_GRAMMAR := r"""
+{
+  "scopeName": "source.nl",
+  "patterns": [
+    {"begin": "//", "end": "\\n", "name": "comment.line"},
+    {"match": "#include", "name": "keyword.control"}
+  ]
+}
+"""
+
 const COLORS := {
 	"reserved": Color("c678dd"),
 	"annotation": Color("a2b429"),
@@ -48,6 +59,7 @@ func _initialize() -> void:
 
 	_test_theme()
 	_test_mini_grammar()
+	_test_newline_end()
 	_test_python()
 	_test_backend_parity()
 	_test_fallback()
@@ -150,6 +162,25 @@ func _test_mini_grammar() -> void:
 	tokenizer.tokenize("total = 1", TMState.new())
 	tokens = tokenizer.tokens()
 	check_color(tokens, 0, COLORS["variable"], "capture group")
+
+
+func _test_newline_end() -> void:
+	print("newline terminated rules")
+	var grammar := TMGrammar.new()
+	grammar.load_from_dict(JSON.parse_string(NEWLINE_GRAMMAR), "nl")
+	var tokenizer := TMTokenizer.new()
+	tokenizer.setup(grammar, make_theme())
+	var state := TMState.new()
+
+	# The highlighter feeds every line with its trailing newline; a rule that
+	# ends on \n must close, otherwise the rest of the file stays plain.
+	tokenizer.tokenize("// a comment\n", state)
+	check(state.depth() == 0, "newline ends the comment frame")
+	check_color(tokenizer.tokens(), 0, COLORS["comments"], "comment line")
+
+	tokenizer.tokenize("#include <x>\n", state)
+	check_color(tokenizer.tokens(), 0, COLORS["reserved"], "next line still highlighted")
+	check(state.depth() == 0, "no frame leaked")
 
 
 # --------------------------------------------------------------------------
