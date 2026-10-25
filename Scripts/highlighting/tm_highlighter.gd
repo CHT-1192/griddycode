@@ -30,6 +30,7 @@ var _warm_scheduled := false
 var _last_refresh_valid := 0
 var _frame := -1
 var _frame_ms := 0
+var _warm_gen := 0
 
 
 func set_grammar(grammar: TMGrammar) -> void:
@@ -41,14 +42,14 @@ func set_grammar(grammar: TMGrammar) -> void:
 	else:
 		_tokenizer.reset()
 
-	_clear_highlighting_cache()
+	_reset_all()
 	clear_highlighting_cache()
 	emit_changed()
 
 
 func set_theme(theme: TMTheme) -> void:
 	_tokenizer.setup(_grammar, theme)
-	_clear_highlighting_cache()
+	_reset_all()
 	clear_highlighting_cache()
 	emit_changed()
 
@@ -69,13 +70,24 @@ func invalidate_from(line: int) -> void:
 # SyntaxHighlighter
 # --------------------------------------------------------------------------
 
+## Called by Godot whenever its own per-line cache is dropped.  Our data stays
+## valid across those, so this must not reset anything: `_reset_all()` is used
+## explicitly when the grammar, theme or document changes.
 func _clear_highlighting_cache() -> void:
+	pass
+
+
+func _reset_all() -> void:
 	_valid = 0
 	_line_count = -1
 	_last_refresh_valid = 0
+	_warm_scheduled = false
+	_warm_gen += 1
 	_states.clear()
 	_tokens.clear()
 	_hashes = PackedInt64Array()
+	_frame = -1
+	_frame_ms = 0
 
 
 func _get_line_syntax_highlighting(line: int) -> Dictionary:
@@ -153,17 +165,25 @@ func _schedule_warmup() -> void:
 		return
 	_warm_scheduled = true
 	_last_refresh_valid = _valid
-	_warm_loop()
+	_warm_loop(_warm_gen)
+
+
+## Drops the per-line dictionaries cached inside Godot's SyntaxHighlighter and
+## asks TextEdit to rebuild its own cache, so lines that were painted plain
+## while warming up get recomputed.
+func _refresh_lines() -> void:
+	clear_highlighting_cache()
+	emit_changed()
 
 
 ## Fills the rest of the document a few milliseconds at a time.  The loop is
 ## async on purpose: `call_deferred` chains are flushed inside a single frame,
 ## which would reintroduce the freeze this is meant to avoid.
-func _warm_loop() -> void:
-	while true:
+func _warm_loop(generation: int) -> void:
+	while generation == _warm_gen:
 		var text_edit := get_text_edit()
 		if text_edit == null or _grammar == null:
-			break
+			return
 
 		var line_count := text_edit.get_line_count()
 		if _valid >= line_count:
@@ -185,12 +205,18 @@ func _warm_loop() -> void:
 
 		if _valid - _last_refresh_valid >= WARM_REFRESH_EVERY:
 			_last_refresh_valid = _valid
-			emit_changed()
+			_refresh_lines()
 
-		await text_edit.get_tree().process_frame
+		var tree := text_edit.get_tree()
+		if tree == null:
+			return
+		await tree.process_frame
+
+	if generation != _warm_gen:
+		return
 
 	_warm_scheduled = false
-	emit_changed()
+	_refresh_lines()
 
 
 func _ensure_line(text_edit: TextEdit, line: int) -> void:
