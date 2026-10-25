@@ -198,7 +198,11 @@ func _process(_delta):
 	if Input.is_action_just_pressed("ui_settings"):  toggle(%Settings, true, (18 * 7.5) * 2)
 	if Input.is_action_just_pressed("ui_info"):      toggle(%Info, true, 1500)
 	if Input.is_action_just_pressed("ui_theme"):     toggle(%ThemeChooser, false, (18 * 28))
-	if Input.is_action_just_pressed("ui_cancel"):    toggle(%FileDialog)
+	if Input.is_action_just_pressed("ui_cancel"):
+		if active_overlay == %Settings:
+			toggle(%Settings, true, (18 * 7.5) * 2)
+		else:
+			toggle(%FileDialog)
 	if Input.is_action_just_pressed("ui_comments"):  toggle(%Comments, false, -(18 * 7.5))
 
 func _on_gui_input(_event):

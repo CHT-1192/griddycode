@@ -15,6 +15,10 @@ func setup_settings() -> void:
 	for child in get_children():
 		child.queue_free()
 
+	var top_spacer := Control.new()
+	top_spacer.custom_minimum_size = Vector2(0, 10)
+	add_child(top_spacer)
+
 	for setting in LuaSingleton.settings:
 		var unit = setting.unit if setting.has("unit") else "";
 		var _min = setting.min if setting.has("min") else 0;
@@ -27,6 +31,11 @@ func setup_settings() -> void:
 	var child = UPDATE.instantiate()
 
 	add_child(child)
+
+	# Breathing room at the bottom of the scrollable list.
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(0, 36)
+	add_child(spacer)
 
 func create_setting(text: String, icon: String, value: Variant, options: Array, property: String, unit: String, _min: float, _max: float, precision: bool, step: float = 0.0) -> void:
 	var node = SETTING.instantiate()
